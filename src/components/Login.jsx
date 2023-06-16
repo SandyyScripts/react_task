@@ -3,7 +3,7 @@ import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../AuthContext";
 
@@ -30,6 +30,10 @@ export default function SignIn() {
       navigate("/error");
     }
   };
+
+  if (token) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <Container component="main" maxWidth="sm">

@@ -13,6 +13,9 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 // import styled from "styled-components";
 import styled from "@emotion/styled";
+import SearchBar from "material-ui-search-bar";
+import { visuallyHidden } from "@mui/utils";
+import Button from "@mui/material/Button";
 
 const rows = [
   {
@@ -347,11 +350,17 @@ function EnhancedTableHead(props) {
             width={headCell.width}
           >
             <TableSortLabel
-              active={orderBy === headCell.id}
+              active={true}
               direction={orderBy === headCell.id ? order : "asc"}
               onClick={createSortHandler(headCell.id)}
+              className={headCell.show ? "sortedHeading" : "no-sort"}
             >
               {headCell.label}
+              {orderBy === headCell.id ? (
+                <Box component="span" sx={visuallyHidden}>
+                  {order === "desc" ? "sorted descending" : "sorted ascending"}
+                </Box>
+              ) : null}
             </TableSortLabel>
           </TableCell>
         ))}
@@ -457,6 +466,7 @@ const electionType = {
 
 export default function EnhancedTable() {
   const [order, setOrder] = React.useState("asc");
+  const [search, setSearch] = React.useState("");
   const [orderBy, setOrderBy] = React.useState("calories");
   const [selected, setSelected] = React.useState([]);
   const [page, setPage] = React.useState(0);
@@ -464,11 +474,53 @@ export default function EnhancedTable() {
   const [row, setRow] = React.useState(rows);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
+  const doSearch = React.useCallback((v) => {
+    const query = v?.toString().toLowerCase();
+    let newrows = row
+      .map((row) => row)
+      .filter(
+        (r) =>
+          r.year.e_year.toString().toLowerCase().includes(query) ||
+          r[1].name.toLowerCase().includes(query) ||
+          r[2].name.toLowerCase().includes(query) ||
+          r[3].name.toLowerCase().includes(query)
+      );
+    console.log(newrows);
+    setRow(newrows);
+  }, []);
+  const cancelSearch = () => {
+    setSearch("");
+    doSearch(search);
+  };
+
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
+    sort();
   };
+
+  const sort = React.useCallback(() => {
+    if (orderBy === "winning_party") {
+      if (order === "desc") {
+        let arr = rows
+          .map((data) => data)
+          .sort(
+            (a, b) =>
+              a["winnerParty"]["voteshare"] - b["winnerParty"]["voteshare"]
+          );
+        setRow([...arr]);
+      } else {
+        let arr = rows
+          .map((data) => data)
+          .sort(
+            (a, b) =>
+              b["winnerParty"]["voteshare"] - a["winnerParty"]["voteshare"]
+          );
+        setRow([...arr]);
+      }
+    }
+  });
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
@@ -525,6 +577,16 @@ export default function EnhancedTable() {
       ),
     [order, orderBy, page, rowsPerPage]
   );
+  const [filterValue, setFilterValue] = React.useState(null);
+  const handleFilterChange = React.useCallback((v) => {
+    setFilterValue(v);
+    const query = v?.toString().toLowerCase();
+    let newrows = row
+      .map((row) => row)
+      .filter((r) => r.year.e_type.toString().toLowerCase().includes(query));
+    console.log(newrows);
+    setRow(newrows);
+  }, []);
 
   return (
     <Box
@@ -548,6 +610,23 @@ export default function EnhancedTable() {
         //   alignItems: "center",
         // }}
         >
+          <SearchBar
+            value={search}
+            onChange={(v) => doSearch(v)}
+            onCancelSearch={() => cancelSearch()}
+          />
+          <Button
+            variant={filterValue === "LS" ? "contained" : "outlined"}
+            onClick={() => handleFilterChange("LS")}
+          >
+            Lok Sabha
+          </Button>
+          <Button
+            variant={filterValue === "VS" ? "contained" : "outlined"}
+            onClick={() => handleFilterChange("VS")}
+          >
+            Vidhan Sabha
+          </Button>
           <Table
             sx={{ minWidth: 750 }}
             aria-labelledby="tableTitle"
